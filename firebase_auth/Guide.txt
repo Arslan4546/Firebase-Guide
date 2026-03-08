@@ -1,0 +1,13 @@
+==> Firebase Auth Guide 
+
+1) Install node.js (node will automatically set the env paths)
+2) set this path (C:\Users\arsla\AppData\Local\Pub\Cache\bin) manually to set the flutterfire 
+3) Then create a flutter project on local Pc 
+4) create a project on firebase console 
+5) For connecting firebase project to the local Install firebase tools using this commands(npm install -g firebase-tools) if shows warning then restart PC
+6) Then login to the firebase using (firebase login)
+7) run this commands in cmd (dart pub global activate flutterfire_cli)
+8) now run this command in your project root folder (flutterfire configure --project=flutter-auth-app-6d6cb)
+9) add dependencies firebase core, firebase auth and run pub get 
+10) add some lines of code in the main function and then run the project on emulator
+11) 
