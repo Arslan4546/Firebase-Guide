@@ -10,4 +10,4 @@
 8) now run this command in your project root folder (flutterfire configure --project=flutter-auth-app-6d6cb)
 9) add dependencies firebase core, firebase auth and run pub get 
 10) add some lines of code in the main function and then run the project on emulator
-11) 
+11) and perform your auth functionality 
