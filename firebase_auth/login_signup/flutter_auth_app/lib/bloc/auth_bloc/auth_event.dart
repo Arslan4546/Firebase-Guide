@@ -34,7 +34,27 @@ class AuthSignInRequested extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
+/// Sign in / sign up with Google OAuth
+class AuthGoogleSignInRequested extends AuthEvent {
+  final bool isLogin;
+  
+  const AuthGoogleSignInRequested({this.isLogin = false});
+
+  @override
+  List<Object?> get props => [isLogin];
+}
+
 /// Sign out the current user
 class AuthSignOutRequested extends AuthEvent {
   const AuthSignOutRequested();
+}
+
+/// Request a password reset email
+class AuthPasswordResetRequested extends AuthEvent {
+  final String email;
+
+  const AuthPasswordResetRequested({required this.email});
+
+  @override
+  List<Object?> get props => [email];
 }

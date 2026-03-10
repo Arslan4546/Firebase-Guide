@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_auth_app/views/auth_view/auth_view_widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_auth_app/bloc/auth_bloc/auth_bloc.dart';
 import 'package:flutter_auth_app/bloc/auth_bloc/auth_event.dart';
 import 'package:flutter_auth_app/bloc/auth_bloc/auth_state.dart';
 import 'package:flutter_auth_app/core/utils/flushbar_helper.dart';
+import 'package:flutter_auth_app/views/auth_view/auth_view_widgets.dart';
+import 'package:flutter_auth_app/views/auth_view/forgot_password_view.dart';
 import 'package:flutter_auth_app/views/auth_view/signup_view.dart';
 import 'package:flutter_auth_app/views/home_view/home_view.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -39,19 +40,25 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
+  void _onGoogleSignInTapped() {
+    context.read<AuthBloc>().add(const AuthGoogleSignInRequested(isLogin: true));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) async {
         if (state is AuthAuthenticated) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeView()),
-          );
+          if (context.mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeView()),
+            );
+          }
         } else if (state is AuthError) {
           await FlushbarHelper.showError(
             context: context,
             message: state.message,
-            title: 'Login Failed',
+            title: 'Sign In Failed',
           );
         }
       },
@@ -85,9 +92,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF1B5E20,
-                            ).withValues(alpha: 0.4),
+                            color: const Color(0xFF1B5E20).withValues(alpha: 0.4),
                             blurRadius: 20,
                             spreadRadius: 3,
                           ),
@@ -172,65 +177,109 @@ class _LoginViewState extends State<LoginView> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ForgotPasswordView(),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(50, 30),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: Color(0xFF66BB6A),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 36),
-                        // Login button
+                        // ── Separate loading states for each button ──────────
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {
-                            final isLoading = state is AuthLoading;
-                            return SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF1B5E20),
-                                      Color(0xFF2E7D32),
-                                      Color(0xFF43A047),
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF1B5E20,
-                                      ).withValues(alpha: 0.4),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: isLoading ? null : _onLoginTapped,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
+                            final isEmailLoading = state is AuthEmailLoading;
+                            final isGoogleLoading = state is AuthGoogleLoading;
+                            final isAnyLoading =
+                                isEmailLoading || isGoogleLoading;
+
+                            return Column(
+                              children: [
+                                // Sign In button
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF1B5E20),
+                                          Color(0xFF2E7D32),
+                                          Color(0xFF43A047),
+                                        ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      ),
                                       borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF1B5E20)
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          isAnyLoading ? null : _onLoginTapped,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: isEmailLoading
+                                          ? const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2.5,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Sign In',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
                                     ),
                                   ),
-                                  child: isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
-                                      : const Text(
-                                          'Sign In',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
                                 ),
-                              ),
+                                const SizedBox(height: 24),
+                                // OR divider
+                                const OrDivider(),
+                                const SizedBox(height: 24),
+                                // Google Sign-In button
+                                GoogleSignInButton(
+                                  isLoading: isGoogleLoading,
+                                  onPressed: _onGoogleSignInTapped,
+                                ),
+                              ],
                             );
                           },
                         ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_auth_app/bloc/auth_bloc/auth_bloc.dart';
 import 'package:flutter_auth_app/bloc/auth_bloc/auth_event.dart';
 import 'package:flutter_auth_app/bloc/auth_bloc/auth_state.dart';
 import 'package:flutter_auth_app/views/auth_view/login_view.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -33,13 +33,25 @@ class HomeView extends StatelessWidget {
               builder: (context, state) {
                 final user = state is AuthAuthenticated ? state.user : null;
 
+                // Determine auth provider
+                final isGoogleUser =
+                    user?.providerData.any(
+                      (p) => p.providerId == 'google.com',
+                    ) ??
+                    false;
+
+                // Display name: prefer Firebase displayName, else email prefix
+                final displayName = user?.displayName?.isNotEmpty == true
+                    ? user!.displayName!
+                    : (user?.email?.split('@').first ?? 'User');
+
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 28),
-                      // Top bar
+                      // ── Top bar ──────────────────────────────────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -67,8 +79,8 @@ class HomeView extends StatelessWidget {
                             ],
                           ),
                           // Logout button
-                          BlocBuilder<AuthBloc, AuthState>(
-                            builder: (context, state) {
+                          Builder(
+                            builder: (context) {
                               final loading = state is AuthLoading;
                               return GestureDetector(
                                 onTap: loading
@@ -126,7 +138,7 @@ class HomeView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 36),
-                      // User info card
+                      // ── User info card ────────────────────────────────────
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
@@ -149,41 +161,43 @@ class HomeView extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.15),
-                              ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            ),
+                            // Avatar: photo URL for Google users, icon for email
+                            _buildAvatar(user?.photoURL),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    user?.email ?? 'user@example.com',
+                                    displayName,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 15,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  if (user?.email != null) ...[
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      user!.email!,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.75,
+                                        ),
+                                        fontSize: 13,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                   const SizedBox(height: 4),
                                   Text(
                                     'UID: ${user?.uid.substring(0, 12) ?? '—'}…',
                                     style: TextStyle(
                                       color: Colors.white.withValues(
-                                        alpha: 0.6,
+                                        alpha: 0.5,
                                       ),
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       letterSpacing: 0.5,
                                     ),
                                   ),
@@ -193,40 +207,9 @@ class HomeView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
-                      // Status chip
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF66BB6A),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Authenticated via Firebase',
-                              style: TextStyle(
-                                color: Color(0xFF66BB6A),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 20),
+                      // ── Auth provider chip ─────────────────────────────────
+                      Row(children: [_buildProviderChip(isGoogleUser)]),
                       const Spacer(),
                       // Footer
                       Center(
@@ -247,6 +230,76 @@ class HomeView extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String? photoUrl) {
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        child: ClipOval(
+          child: Image.network(
+            photoUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => _defaultAvatar(),
+          ),
+        ),
+      );
+    }
+    return _defaultAvatar();
+  }
+
+  Widget _defaultAvatar() {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.15),
+      ),
+      child: const Icon(Icons.person_rounded, color: Colors.white, size: 30),
+    );
+  }
+
+  Widget _buildProviderChip(bool isGoogle) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Color(0xFF66BB6A),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            isGoogle
+                ? 'Authenticated via Google'
+                : 'Authenticated via Firebase',
+            style: const TextStyle(
+              color: Color(0xFF66BB6A),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

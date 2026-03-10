@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? get currentUser => _firebaseAuth.currentUser;
 
@@ -27,7 +29,37 @@ class AuthService {
     );
   }
 
+  /// Step 1 — Shows the Google account picker.
+  /// Returns null if the user cancelled.
+  Future<GoogleSignInAccount?> getGoogleAccount() async {
+    return await _googleSignIn.signIn();
+  }
+
+  /// Step 2 — Completes the Firebase sign-in using an already-selected
+  /// Google account. Returns null if [googleAccount] is null.
+  Future<UserCredential?> signInWithGoogleAccount(
+    GoogleSignInAccount googleAccount,
+  ) async {
+    final GoogleSignInAuthentication googleAuth =
+        await googleAccount.authentication;
+
+    final OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    return await _firebaseAuth.signInWithCredential(credential);
+  }
+
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
+    // Sign out from Firebase and revoke the Google session
+    await Future.wait([
+      _firebaseAuth.signOut(),
+      _googleSignIn.signOut(),
+    ]);
+  }
+
+  Future<void> sendPasswordResetEmail({required String email}) async {
+    await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
   }
 }

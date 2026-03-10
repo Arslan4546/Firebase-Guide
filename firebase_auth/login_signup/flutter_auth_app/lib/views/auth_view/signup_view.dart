@@ -41,6 +41,10 @@ class _SignupViewState extends State<SignupView> {
     }
   }
 
+  void _onGoogleSignInTapped() {
+    context.read<AuthBloc>().add(const AuthGoogleSignInRequested(isLogin: false));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
@@ -48,8 +52,8 @@ class _SignupViewState extends State<SignupView> {
         if (state is AuthAuthenticated) {
           await FlushbarHelper.showSuccess(
             context: context,
-            message: 'Account created successfully! Welcome aboard 🎉',
-            title: 'Registration Successful',
+            message: 'Welcome! You\'re signed in successfully 🎉',
+            title: 'Success',
           );
           if (context.mounted) {
             Navigator.of(context).pushReplacement(
@@ -60,7 +64,7 @@ class _SignupViewState extends State<SignupView> {
           await FlushbarHelper.showError(
             context: context,
             message: state.message,
-            title: 'Registration Failed',
+            title: 'Sign Up Failed',
           );
         }
       },
@@ -111,9 +115,7 @@ class _SignupViewState extends State<SignupView> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF1B5E20,
-                            ).withValues(alpha: 0.4),
+                            color: const Color(0xFF1B5E20).withValues(alpha: 0.4),
                             blurRadius: 20,
                             spreadRadius: 3,
                           ),
@@ -227,64 +229,82 @@ class _SignupViewState extends State<SignupView> {
                           },
                         ),
                         const SizedBox(height: 36),
-                        // Sign up button
+                        // ── Separate loading states for each button ──────────
                         BlocBuilder<AuthBloc, AuthState>(
                           builder: (context, state) {
-                            final isLoading = state is AuthLoading;
-                            return SizedBox(
-                              width: double.infinity,
-                              height: 56,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF1B5E20),
-                                      Color(0xFF2E7D32),
-                                      Color(0xFF43A047),
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(
-                                        0xFF1B5E20,
-                                      ).withValues(alpha: 0.4),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: isLoading ? null : _onSignUpTapped,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
+                            final isEmailLoading = state is AuthEmailLoading;
+                            final isGoogleLoading = state is AuthGoogleLoading;
+                            final isAnyLoading =
+                                isEmailLoading || isGoogleLoading;
+
+                            return Column(
+                              children: [
+                                // Create Account button
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF1B5E20),
+                                          Color(0xFF2E7D32),
+                                          Color(0xFF43A047),
+                                        ],
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                      ),
                                       borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF1B5E20)
+                                              .withValues(alpha: 0.4),
+                                          blurRadius: 16,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          isAnyLoading ? null : _onSignUpTapped,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        shadowColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                      ),
+                                      child: isEmailLoading
+                                          ? const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2.5,
+                                              ),
+                                            )
+                                          : const Text(
+                                              'Create Account',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
                                     ),
                                   ),
-                                  child: isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
-                                      : const Text(
-                                          'Create Account',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
                                 ),
-                              ),
+                                const SizedBox(height: 24),
+                                // OR divider
+                                const OrDivider(),
+                                const SizedBox(height: 24),
+                                // Google Sign-In button
+                                GoogleSignInButton(
+                                  isLoading: isGoogleLoading,
+                                  onPressed: _onGoogleSignInTapped,
+                                ),
+                              ],
                             );
                           },
                         ),
