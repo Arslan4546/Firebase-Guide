@@ -11,3 +11,6 @@
 9) add dependencies firebase core, firebase auth and run pub get 
 10) add some lines of code in the main function and then run the project on emulator
 11) and perform your auth functionality 
+12) for google sign in allow the google method from firebase and set the function to login, signup with 
+google 
+
